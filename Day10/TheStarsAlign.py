@@ -1,50 +1,54 @@
-# Advent of code 2018
-# --- Day 10: The Stars Align ---
+import re, sys
 
-import sys
+Visualize      = True
+IterationCount = 100
 
-def print_lights(lights):
-    x = [x for x,y in lights.keys()]
-    y = [y for x,y in lights.keys()]
-    minx, maxx = min(x), max(x)
-    miny, maxy = min(y), max(y)
+with open("day10.txt", 'r') as inputFile:
+    data = inputFile.readlines()
 
-    if maxy - miny < 18:
-        result = []
-        for y in range(miny, maxy+1):
-            for x in range(minx, maxx+1):
-                result.append("#" if (x, y) in lights else ".")
-            result.append('\n')
+coordData = []
+for line in data:
+    values = re.findall(r'(-?\d+)', line)
+    coordData.append((int(values[0]), int(values[1]), int(values[2]), int(values[3])))
 
-        return ''.join(result)
+counter  = 0
+lastSize = sys.maxsize
+prevPlots = None
 
-    return False
+while True:
+    plots = [(coord[0] + (counter * coord[2]), coord[1] + (counter * coord[3])) for coord in coordData]
 
+    maxY = max(plots, key=lambda x:x[1])[1]
+    minY = min(plots, key=lambda x:x[1])[1]
+    size = abs(maxY - minY)
+    if size < lastSize:
+        lastSize  = size
+        prevPlots = plots
+        counter += 1
+        continue
 
-def step(lights):
-    return {(x + vx, y + vy): (vx, vy) for (x, y), (vx, vy) in lights.items()}
+    sortedY = sorted(prevPlots, key=lambda x:x[1])
+    minY    = sortedY[0][1]
+    maxY    = sortedY[-1][1]
 
-def parse(line):
-    pos, vel = line[10:].strip().split("> velocity=<",)
-    posx, posy = [int(i) for i in pos.split(", ")]
-    velx, vely = [int(i) for i in vel[:-1].split(", ")]
-    return posx, posy, velx, vely
+    sortedX = sorted(prevPlots, key=lambda x:x[0])
+    minX    = sortedX[0][0]
+    maxX    = sortedX[-1][0]
 
-def main():
-    lights = {}
-    for line in open('day10.txt').readlines():
-        posx, posy, velx, vely = parse(line)
-        lights[posx, posy] = (velx, vely)
+    yLen    = abs(maxY - minY) + 1
+    xLen    = abs(maxX - minX) + 1
 
-    for i in range(25000):
-        result = print_lights(lights)
-        if result:
-            print(result)
-            print(i)
-            break
+    rows    = [['.' for x in range(xLen)] for y in range(yLen)]
+    for i in range(len(prevPlots)):
+        rows[prevPlots[i][1]-minY][prevPlots[i][0]-minX] = "#"
 
-        lights = step(lights)
+    # Part 1
+    print("Part 1: ")
+    for row in rows:
+        print("".join(row))
 
+    print()
 
-if __name__ == '__main__':
-	main()
+    # Part 2
+    print("Part 2: " + str(counter - 1))
+    break
